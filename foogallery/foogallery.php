@@ -3,7 +3,7 @@
 /*
 Plugin Name: FooGallery
 Description: FooGallery is the most intuitive and extensible gallery management tool ever created for WordPress
-Version:     2.4.32
+Version:     3.0.2
 Author:      FooPlugins
 Plugin URI:  https://fooplugins.com/foogallery-wordpress-gallery-plugin/
 Author URI:  https://fooplugins.com
@@ -23,7 +23,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
         define( 'FOOGALLERY_PATH', plugin_dir_path( __FILE__ ) );
         define( 'FOOGALLERY_URL', plugin_dir_url( __FILE__ ) );
         define( 'FOOGALLERY_FILE', __FILE__ );
-        define( 'FOOGALLERY_VERSION', '2.4.32' );
+        define( 'FOOGALLERY_VERSION', '3.0.2' );
         define( 'FOOGALLERY_SETTINGS_VERSION', '2' );
         require_once FOOGALLERY_PATH . 'includes/constants.php';
         require_once FOOGALLERY_PATH . 'includes/functions.php';
@@ -97,6 +97,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     FOOGALLERY_VERSION,
                     'FooGallery'
                 );
+                add_filter( 'foogallery_default_options', 'foogallery_get_default_options' );
                 // load text domain.
                 add_action( 'init', array($this, 'load_plugin_textdomain') );
                 // setup gallery post type.
@@ -137,6 +138,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 new FooGallery_Crop_Position();
                 new FooGallery_ForceHttps();
                 new FooGallery_Debug();
+                new FooGallery_Password_Protect();
                 $checker = new FooGallery_Version_Check();
                 $checker->wire_up_checker();
                 new FooGallery_Widget_Init();

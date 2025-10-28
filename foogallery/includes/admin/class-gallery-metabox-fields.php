@@ -72,20 +72,16 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 
 				case 'radio':
 					$i = 0;
-					$spacer = isset($spacer) ? $spacer : '<br />';
 					foreach ( $choices as $value => $label ) {
 						$selected = '';
 						if ( $field['value'] == $value ) {
 							$selected = ' checked="checked"';
 						}
-						echo '<input' . $field_class . $selected . ' type="radio" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']"  id="FooGallerySettings_' . $id . $i . '" value="' . $value . '">';
-						echo '&nbsp;';
-
 						$label_class = '';
 						$label_icon = '';
 						$label_tooltip = '';
 						$label_tooltip_end = '';
-
+						$input_disabled = '';
 						if ( is_array( $label ) ) {
 							if ( array_key_exists( 'class', $label ) ) {
 								$label_class = ' class="' . $label['class'] . '"';
@@ -97,13 +93,15 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 								$label_tooltip = '<span data-balloon-length="large" data-balloon-pos="right" data-balloon="' . $label['tooltip'] . '">';
 								$label_tooltip_end = '</span>';
 							}
+							if ( array_key_exists( 'disabled', $label ) ) {
+								$input_disabled = ' disabled="disabled"';
+							}
 							$label = $label['label'];
 						}
-
-						echo '<label '.$label_class.' for="FooGallerySettings_' . $id . $i . '">' . $label_tooltip . $label . $label_icon . $label_tooltip_end . '</label>';
-						if ( $i < count( $choices ) - 1 ) {
-							echo $spacer;
-						}
+						echo '<label '.$label_class.'>';
+						echo '<input' . $field_class . $selected . $input_disabled . ' type="radio" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']"  id="FooGallerySettings_' . $id . $i . '" value="' . $value . '">';
+						echo $label_tooltip . $label . $label_icon . $label_tooltip_end;
+						echo '</label>';
 						$i++;
 					}
 					break;
@@ -130,6 +128,14 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 					$min = isset($min) ? $min : 0;
 					$step = isset($step) ? $step : 1;
 					echo '<input class="small-text ' . $class . '" type="number" step="' . $step . '" min="' . $min .'" id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" placeholder="' . $placeholder . '" value="' . esc_attr( $field['value'] ) . '" />';
+
+					break;
+					
+				case 'slider':
+					$min = isset($min) ? $min : 0;
+					$step = isset($step) ? $step : 1;
+					$mask = isset($mask) ? $mask : '{0}px';
+					echo '<range-input class="' . esc_attr( $class ) . '" step="' . esc_attr( $step ) . '" min="' . esc_attr( $min ) . '" max="' . esc_attr( $max ) . '" mask="' . esc_attr( $mask ) . '" id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" value="' . esc_attr( $field['value'] ) . '" />';
 
 					break;
 

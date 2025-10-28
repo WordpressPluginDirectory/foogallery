@@ -66,11 +66,21 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			$settings[] = array(
 				'id'      => 'gallery_template',
-				'title'   => __( 'Default Gallery Template', 'foogallery' ),
-				'desc'    => __( 'The default gallery template to use for new galleries', 'foogallery' ),
+				'title'   => __( 'Default Gallery Layout', 'foogallery' ),
+				'desc'    => __( 'The default gallery layout to use for new galleries', 'foogallery' ),
 				'default' => foogallery_get_default( 'gallery_template' ) ,
 				'type'    => 'select',
 				'choices' => $gallery_templates_choices,
+				'tab'     => 'general',
+				'section' => __( 'Gallery Defaults', 'foogallery' )
+			);
+
+			$settings[] = array(
+				'id'      => 'default_gallery_attachments',
+				'title'   => __( 'Default Gallery Items', 'foogallery' ),
+				'desc'    => __( 'The default attachments to use for new galleries. Provide a comma separated list of attachment IDs.', 'foogallery' ),
+				'default' => '' ,
+				'type'    => 'text',
 				'tab'     => 'general',
 				'section' => __( 'Gallery Defaults', 'foogallery' )
 			);
@@ -154,8 +164,17 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			$settings[] = array(
 				'id'      => 'hide_gallery_template_help',
-				'title'   => __( 'Hide Gallery Template Help', 'foogallery' ),
-				'desc'    => __( 'Some gallery templates show helpful tips, which are useful for new users. You can choose to hide these tips.', 'foogallery' ),
+				'title'   => __( 'Hide Gallery Settings Tips', 'foogallery' ),
+				'desc'    => __( 'Some gallery settings show helpful tips, which are useful for new users. You can choose to hide these tips.', 'foogallery' ),
+				'type'    => 'checkbox',
+				'tab'     => 'general',
+				'section' => __( 'Admin', 'foogallery' )
+			);
+
+			$settings[] = array(
+				'id'      => 'minimize_gallery_settings_help',
+				'title'   => __( 'Minimize Gallery Settings Help Text', 'foogallery' ),
+				'desc'    => __( 'By default, help text is displayed under each gallery setting. You can choose to minimize this and rather show a help icon that opens the help text in a tooltip.', 'foogallery' ),
 				'type'    => 'checkbox',
 				'tab'     => 'general',
 				'section' => __( 'Admin', 'foogallery' )
@@ -182,20 +201,39 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			$settings[] = array(
 				'id'      => 'hide_editor_button',
-				'title'   => __( 'Hide Classic Editor Button', 'foogallery' ),
-				'desc'    => sprintf( __( 'If enabled, this will hide the "Add %s" button in the Classic editor.', 'foogallery' ), foogallery_plugin_name() ),
-				'type'    => 'checkbox',
+				'title'   => __( 'Classic Editor Button', 'foogallery' ),
+				'desc'    => sprintf( __( 'Either show or hide the "Add %s" button in the Classic editor.', 'foogallery' ), foogallery_plugin_name() ),
+				'default' => 'on',
+				'type'    => 'select',
+				'choices' => array(
+					'on'  => __( 'Hidden', 'foogallery' ),
+					'off' => __( 'Visible', 'foogallery' )
+				),
 				'tab'     => 'general',
 				'section' => __( 'Admin', 'foogallery' )
 			);
 
 			$settings[] = array(
 				'id'      => 'advanced_attachment_modal',
-				'title'   => __( 'Enable Advanced Attachment Modal', 'foogallery' ),
+				'title'   => __( 'Advanced Attachment Modal', 'foogallery' ),
 				'desc'    => __( 'If enabled, this will use the advanced attachment modal which allows for faster and easier editing of attachment details, when creating your galleries.', 'foogallery' ),
-				'type'    => 'checkbox',
+				'type'    => 'select',
 				'default' => 'on',
 				'tab'     => 'general',
+				'section' => __( 'Admin', 'foogallery' ),
+				'choices' => array(
+					'on'  => __( 'Enabled', 'foogallery' ),
+					'off' => __( 'Disabled', 'foogallery' )
+				)
+			);
+
+			$settings[] = array(
+				'id'    => 'limit_gallery_selector_block_editor',
+				'type'  => 'text',
+				'title' => __( 'Limit Galleries (Block Editor)', 'foogallery' ),
+				'desc'  => __( 'Limit the number of galleries that are returned in the block editor when choosing a gallery.', 'foogallery' ),
+				'tab'   => 'general',
+				'class' => 'foogallery_settings_short_text',
 				'section' => __( 'Admin', 'foogallery' )
 			);
 
@@ -432,15 +470,6 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			$tabs['advanced'] = __( 'Advanced', 'foogallery' );
 
             $settings[] = array(
-                'id'      => 'enable_custom_ready',
-                'title'   => __( 'Custom Ready Event', 'foogallery' ),
-                'desc'    => sprintf( __( 'There are sometimes unavoidable javascript errors on the page, which could result in the gallery not initializing correctly. Enable this setting to use a built-in custom ready event to overcome this problem if needed.', 'foogallery' ), foogallery_plugin_name() ),
-                'type'    => 'checkbox',
-                'tab'     => 'advanced',
-                'default' => 'on'
-            );
-
-            $settings[] = array(
                 'id'      => 'add_media_button_start',
                 'title'   => __( 'Move Add Media Button', 'foogallery' ),
                 'desc'    => sprintf( __( 'You can move the Add Media button to the beginning of the attachment list. This can help when your galleries have a large number of images, so you do not have to scroll.', 'foogallery' ), foogallery_plugin_name() ),
@@ -537,6 +566,14 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 					'tab'     => 'advanced'
 				);
 			}
+
+			$settings[] = array(
+				'id'    => 'enable_trial_mode',
+				'title' => __( 'Admin Trial Mode', 'foogallery' ),
+				'desc'  => __( 'Enables trial mode in the admin, which will highlight features that are only available in the Pro version.', 'foogallery' ),
+				'type'  => 'checkbox',
+				'tab'   => 'advanced'
+			);
 
 			//endregion Advanced Tab
 

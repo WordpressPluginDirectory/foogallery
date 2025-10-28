@@ -16,33 +16,8 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary' ) ) {
                 add_action('foogallery_gallery_metabox_items_list', array($this, 'output_attachment_items'), 10, 1);
 
                 add_action('foogallery_before_save_gallery', array($this, 'save_gallery_attachments'), 10, 2);
-
-                add_action( 'wp_ajax_foogallery_attachment_modal_toggle', array( $this, 'attachment_modal_toggle' ) );
             }
 		}
-
-        /**
-         * Toggles the attachment modal setting.
-         */
-        public function attachment_modal_toggle() {
-            $nonce = safe_get_from_request( 'nonce' );
-
-            if ( wp_verify_nonce( $nonce, 'foogallery_toggle_attachment_modal' ) ) {
-
-                $setting_value = foogallery_get_setting( 'advanced_attachment_modal' );
-                if ( 'on' === $setting_value ) {
-                    $setting_value = '';
-                    echo __( 'The Attachment Modal feature has been disabled. The page will now refresh.' ,'foogallery' );
-                } else {
-                    $setting_value = 'on';
-                    echo __( 'The Attachment Modal feature has been enabled. The page will now refresh.' ,'foogallery' );
-                }
-
-                foogallery_set_setting( 'advanced_attachment_modal', $setting_value );
-            }
-
-            die();
-        }
 
 		/**
 		 * Returns the number of attachments used from the media library
@@ -131,7 +106,7 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary' ) ) {
             }
 			?>
 			<input type="hidden" data-foogallery-preview="include" name='foogallery_attachments' id="foogallery_attachments" value="<?php echo $attachment_ids; ?>"/>
-            <div class="foogallery-attachments-list-container <?php echo $show_attachments && $has_attachments ? '' : 'hidden'; ?>">
+            <div class="foogallery-attachments-list-container <?php echo $show_attachments && $has_attachments ? '' : 'foogallery-hidden'; ?>">
                 <ul class="foogallery-attachments-list <?php echo $media_button_start ? 'foogallery-add-media-button-start' : ''; ?>">
                     <?php if ( $media_button_start ) {
                         $this->render_add_media_button( $foogallery->ID );
@@ -150,23 +125,6 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary' ) ) {
                 <div style="clear: both;"></div>
                 <textarea style="display: none" id="foogallery-attachment-template"><?php $this->render_attachment_item(); ?></textarea>
                 <div class="foogallery-attachments-list-bar">
-                    <span class="foogallery-feature-promo">
-                    <?php
-                    $modal_enabled = foogallery_get_setting( 'advanced_attachment_modal' );
-                    $toggle_attachment_modal_nonce = wp_create_nonce( 'foogallery_toggle_attachment_modal' );
-                    $attachment_modal_url = 'https://fooplugins.com/documentation/foogallery/getting-started-foogallery/advanced-attachment-modal/';
-                    $attachment_modal_link_html = sprintf('<a target="_blank" href="%s">%s</a>',$attachment_modal_url, __( 'Advanced Attachment Modal', 'foogallery' ) );
-
-                    if ( 'on' !== $modal_enabled ) {
-                        printf( __( 'Try the new %s feature : a better way to update your attachment details!', 'foogallery' ), $attachment_modal_link_html );
-                        $attachment_modal_action = __( 'Enable it now!', 'foogallery' );
-                    } else {
-                        printf( __( 'The new %s feature is enabled and ready to use!', 'foogallery' ), $attachment_modal_link_html );
-                        $attachment_modal_action = __( 'Disable it now!', 'foogallery' );
-                    }
-                    ?>
-                        <a data-nonce="<?php echo $toggle_attachment_modal_nonce; ?>" class="button button-small button-secondary foogallery-attachment-modal-toggle" target="_blank" href="#advanced_attachment_modal"><?php echo $attachment_modal_action; ?></a>
-                    </span>
                     <?php do_action('foogallery_attachments_list_bar_buttons', $foogallery ); ?>
 
                     <button type="button" class="button button-primary button-large alignright upload_image_button"
@@ -299,23 +257,13 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary_Query_Helper' ) ) {
 				}
 			}
 
-			//set some sorting globals
-			global $foogallery_force_sort_orderby;
-			global $foogallery_force_sort_order;
-			$foogallery_force_sort_orderby = $attachment_query_args['orderby'];
-			$foogallery_force_sort_order = $attachment_query_args['order'];
-
 			//setup intercepting actions
-			add_action( 'pre_get_posts', array( $this, 'force_gallery_ordering' ), 99 );
 			add_action( 'pre_get_posts', array( $this, 'force_suppress_filters' ), PHP_INT_MAX );
 
 			$attachment_posts = get_posts( $attachment_query_args );
 
 			//remove intercepting actions
-			remove_action( 'pre_get_posts', array( $this, 'force_gallery_ordering' ), 99 );
 			remove_action( 'pre_get_posts', array( $this, 'force_suppress_filters' ), PHP_INT_MAX );
-
-			$foogallery_force_sort = $foogallery_force_sort_orderby = $foogallery_force_sort_order = null;
 
 			foreach ( $attachment_posts as $attachment_post ) {
 				$attachments[] = apply_filters( 'foogallery_attachment_load', FooGalleryAttachment::get( $attachment_post ), $foogallery );
@@ -325,30 +273,8 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary_Query_Helper' ) ) {
 		}
 
 		/**
-		 * This forces the attachments to be fetched using the correct ordering.
-		 * Some plugins / themes override this globally for some reason, so this is a preventative measure to ensure sorting is correct
-		 * @param $query WP_Query
-		 */
-		public function force_gallery_ordering( $query ) {
-			global $foogallery_force_sort;
-			global $foogallery_force_sort_orderby;
-			global $foogallery_force_sort_order;
-
-			//only care about attachments
-			if ( isset( $foogallery_force_sort ) && array_key_exists( 'post_type', $query->query ) &&
-				'attachment' === $query->query['post_type'] ) {
-			    if ( isset( $foogallery_force_sort_orderby ) ) {
-				    $query->set( 'orderby', $foogallery_force_sort_orderby );
-			    }
-				if ( isset( $foogallery_force_sort_order ) ) {
-					$query->set( 'order', $foogallery_force_sort_order );
-				}
-			}
-		}
-
-		/**
 		 * This forces the attachments to be fetched without any other filters.
-		 * Some plugins override attachment queries, so this is a preventative measure to ensure sorting is correct
+		 * Some plugins override attachment queries, so this is a preventative measure to ensure attachments are fetched correctly
 		 * @param $query WP_Query
 		 */
 		public function force_suppress_filters( $query ) {

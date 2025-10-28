@@ -41,6 +41,14 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 			//attempt to load default gallery settings from another gallery, as per FooGallery settings page
 			$gallery->load_default_settings_if_new();
 
+			//attempt to load default attachments from the settings page
+			if ( $gallery->is_new() ) {
+				$default_attachments = foogallery_get_setting( 'default_gallery_attachments' );
+				if ( !empty($default_attachments) ) {
+					$gallery->attachment_ids = explode( ',', $default_attachments );
+				}
+			}
+
 			$mode = $gallery->get_meta( 'foogallery_items_view', 'manage' );
 
 			if ( empty($mode) || $gallery->is_new() ) {
@@ -50,37 +58,60 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 
 			do_action( 'foogallery_gallery_metabox_items', $gallery );
 			?>
-			<div class="hidden foogallery-items-view-switch-container">
+			<div class="foogallery-hidden foogallery-items-view-switch-container">
 				<div class="foogallery-items-view-switch">
 					<a href="#manage" data-value="manage" data-container=".foogallery-items-view-manage" class="<?php echo $mode==='manage' ? 'current' : ''; ?>"><?php _e('Manage Items', 'foogallery'); ?></a>
 					<a href="#preview" data-value="preview" data-container=".foogallery-items-view-preview" class="<?php echo $mode==='preview' ? 'current' : ''; ?>"><?php _e('Gallery Preview', 'foogallery'); ?></a>
+				</div>
+				<div class="foogallery-preview-actions">
+					<button type="button" class="foogallery-preview-refresh-btn" title="<?php _e('Refresh Preview', 'foogallery'); ?>">
+						<span class="dashicons dashicons-update"></span>
+					</button>
+					<span></span>
+					<button type="button" class="foogallery-viewport-btn active" data-viewport="desktop" title="<?php _e('Desktop View', 'foogallery'); ?>">
+						<span class="dashicons dashicons-desktop"></span>
+					</button>
+					<button type="button" class="foogallery-viewport-btn" data-viewport="tablet" title="<?php _e('Tablet View', 'foogallery'); ?>">
+						<span class="dashicons dashicons-tablet"></span>
+					</button>
+					<button type="button" class="foogallery-viewport-btn" data-viewport="mobile" title="<?php _e('Mobile View', 'foogallery'); ?>">
+						<span class="dashicons dashicons-smartphone"></span>
+					</button>
 				</div>
 				<span id="foogallery_preview_spinner" class="spinner"></span>
 				<input type="hidden" id="foogallery_items_view_input" value="<?php echo $mode; ?>" name="<?php echo FOOGALLERY_META_SETTINGS . '[foogallery_items_view]'; ?>" />
 			</div>
 
-			<div class="foogallery-items-view foogallery-items-view-manage <?php echo $mode==='manage' ? '' : 'hidden'; ?>">
+			<div class="foogallery-items-view foogallery-items-view-manage <?php echo $mode==='manage' ? '' : 'foogallery-hidden'; ?>">
 				<input type="hidden" name="<?php echo FOOGALLERY_CPT_GALLERY; ?>_nonce" id="<?php echo FOOGALLERY_CPT_GALLERY; ?>_nonce" value="<?php echo wp_create_nonce( plugin_basename( FOOGALLERY_FILE ) ); ?>"/>
 				<div class="foogallery-items-list">
-					<div class="foogallery-items-empty <?php echo $has_items ? 'hidden' : ''; ?>" style="padding-top:20px; text-align: center">
+					<div class="foogallery-items-empty <?php echo $has_items ? 'foogallery-hidden' : ''; ?>" style="padding-top:20px; text-align: center">
 						<p><?php _e('Your gallery is currently empty. Add items to see a preview.','foogallery'); ?></p>
 					</div>
 					<?php do_action( 'foogallery_gallery_metabox_items_list', $gallery ); ?>
 				</div>
-				<div class="foogallery-items-add <?php echo $has_items ? 'hidden' : ''; ?>">
+				<div class="foogallery-items-add <?php echo $has_items ? 'foogallery-hidden' : ''; ?>">
 					<?php do_action( 'foogallery_gallery_metabox_items_add', $gallery ); ?>
 				</div>
 			</div>
-			<div class="foogallery-items-view foogallery-items-view-preview <?php echo $mode==='preview' ? '' : 'hidden'; ?>">
-				<div class="foogallery_preview_container <?php echo $mode==='preview' ? '' : 'foogallery-preview-force-refresh'; ?>">
-					<?php
-					if ( $has_items && $mode==='preview' ) {
-						foogallery_render_gallery( $gallery->ID );
-					} else {
-						$this->render_empty_gallery_preview();
-					}
-					?>
+			<div class="foogallery-items-view foogallery-items-view-preview <?php echo $mode==='preview' ? '' : 'foogallery-hidden'; ?>">
+				<!-- Wrap existing preview container -->
+				<div class="foogallery-preview-wrapper viewport-desktop">
+					<div class="foogallery_preview_container <?php echo $mode==='preview' ? '' : 'foogallery-preview-force-refresh'; ?>">
+						<?php
+						if ( $has_items && $mode === 'preview' ) {
+							foogallery_render_gallery( $gallery->ID );
+						} else if ( $has_items && $mode === 'manage' ) {
+							echo '<div style="padding:20px; text-align: center">';
+							echo '<h3>' . __( 'Generating preview...', 'foogallery' ) . '</h3>';
+							echo '</div>';
+						} else {
+							$this->render_empty_gallery_preview();
+						}
+						?>
+					</div>
 				</div>
+                
 				<div style="clear: both"></div>
 				<?php wp_nonce_field( 'foogallery_preview', 'foogallery_preview', false ); ?>
 			</div>
@@ -96,9 +127,11 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 		public function ajax_gallery_preview() {
 			if ( check_admin_referer( 'foogallery_preview', 'foogallery_preview_nonce' ) ) {
 
-				$foogallery_id = $_POST['foogallery_id'];
+				$foogallery_id = intval( $_POST['foogallery_id'] );
 
-				$template = $_POST['foogallery_template'];
+				$template = isset( $_POST['foogallery_template'] ) ? sanitize_key( $_POST['foogallery_template'] ) : '';
+
+				$template = apply_filters( 'foogallery_preview_template', $template, $foogallery_id );
 
 				//check that the template supports previews
 				$gallery_template = foogallery_get_gallery_template( $template );

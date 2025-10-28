@@ -25,16 +25,19 @@ if ( ! class_exists( 'FooGallery_Admin' ) ) {
 			new FooGallery_Admin_Gallery_MetaBoxes();
 			new FooGallery_Admin_Gallery_MetaBox_Items();
 			new FooGallery_Admin_Gallery_MetaBox_Settings();
+			new FooGallery_Admin_Gallery_MetaBox_Template();
 			new FooGallery_Admin_Gallery_MetaBox_Fields();
 			new FooGallery_Admin_Columns();
 			new FooGallery_Admin_Extensions();
 			new FooGallery_Attachment_Fields();
 			new FooGallery_Admin_Notices();
+			new FooGallery_Admin_Notice_CustomCSS();
 			new FooGallery_Admin_Gallery_Attachment_Modal();
 			$foogallery_admin_datasource_instance = new FooGallery_Admin_Gallery_Datasources();
 
 			// include PRO promotion.
 			new FooGallery_Pro_Promotion();
+			new FooGallery_Trial_Mode();
 		}
 
 		function init() {

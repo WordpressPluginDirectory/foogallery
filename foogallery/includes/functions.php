@@ -134,6 +134,12 @@ function foogallery_gallery_shortcode_tag() {
  * @return string Key value on success, false on failure.
  */
 function foogallery_get_default(  $key, $default = false  ) {
+    $defaults = foogallery_get_default_options();
+    // Return the key specified.
+    return ( isset( $defaults[$key] ) ? $defaults[$key] : $default );
+}
+
+function foogallery_get_default_options() {
     $defaults = array(
         'gallery_template'           => 'default',
         'gallery_permalinks_enabled' => false,
@@ -143,11 +149,11 @@ function foogallery_get_default(  $key, $default = false  ) {
         'gallery_sorting'            => '',
         'datasource'                 => 'media_library',
         'advanced_attachment_modal'  => 'on',
+        'hide_editor_button'         => 'on',
     );
     // A handy filter to override the defaults.
     $defaults = apply_filters( 'foogallery_defaults', $defaults );
-    // Return the key specified.
-    return ( isset( $defaults[$key] ) ? $defaults[$key] : $default );
+    return $defaults;
 }
 
 /**
@@ -174,9 +180,7 @@ function foogallery_admin_add_gallery_url() {
  * @return string The Url to the FooGallery help page in admin
  */
 function foogallery_admin_help_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_HELP_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_HELP_SLUG );
 }
 
 /**
@@ -185,9 +189,7 @@ function foogallery_admin_help_url() {
  * @return string The Url to the FooGallery settings page in admin
  */
 function foogallery_admin_settings_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_SETTINGS_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_SETTINGS_SLUG );
 }
 
 /**
@@ -196,7 +198,7 @@ function foogallery_admin_settings_url() {
  * @return string The Url to the FooGallery extensions page in admin
  */
 function foogallery_admin_extensions_url() {
-    return foogallery_admin_extensions_url();
+    return '';
 }
 
 /**
@@ -205,9 +207,7 @@ function foogallery_admin_extensions_url() {
  * @return string The Url to the FooGallery extensions page in admin
  */
 function foogallery_admin_features_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_FEATURES_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_FEATURES_SLUG );
 }
 
 /**
@@ -216,9 +216,7 @@ function foogallery_admin_features_url() {
  * @return string The Url to the FooGallery system info page in admin
  */
 function foogallery_admin_systeminfo_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_SYSTEMINFO_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_SYSTEMINFO_SLUG );
 }
 
 /**
@@ -227,9 +225,7 @@ function foogallery_admin_systeminfo_url() {
  * @return string The Url to the FooGallery pricing page in admin
  */
 function foogallery_admin_pricing_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_PRICING_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_PRICING_SLUG );
 }
 
 /**
@@ -239,6 +235,19 @@ function foogallery_admin_pricing_url() {
  */
 function foogallery_admin_freetrial_url() {
     return add_query_arg( 'trial', 'true', foogallery_admin_pricing_url() );
+}
+
+/**
+ * Returns the FooGallery Url within the admin for a specific page
+ *
+ * @param string $admin_page The page to get the Url for
+ *
+ * @return string The Url to the FooGallery system info page in admin
+ */
+function foogallery_admin_url_for_page(  $admin_page  ) {
+    return admin_url( add_query_arg( array(
+        'page' => $admin_page,
+    ), foogallery_admin_menu_parent_slug() ) );
 }
 
 /**
@@ -773,6 +782,9 @@ function foogallery_get_caption_desc_for_attachment(  $attachment_post, $source 
         if ( empty( $source ) || "none" === $source ) {
             $source = foogallery_caption_desc_source();
         }
+    }
+    if ( is_int( $attachment_post ) ) {
+        $attachment_post = get_post( $attachment_post );
     }
     switch ( $source ) {
         case 'title':
@@ -1905,6 +1917,11 @@ function foogallery_import_attachment(  $attachment_data  ) {
     if ( isset( $attachment_data['custom_target'] ) && !empty( $attachment_data['custom_target'] ) ) {
         $attachment_args['meta_input']['_foogallery_custom_target'] = $attachment_data['custom_target'];
     }
+    if ( isset( $attachment_data['video'] ) && !empty( $attachment_data['video'] ) ) {
+        $attachment_args['meta_input']['_foogallery_video_data'] = array(
+            'url' => $attachment_data['video'],
+        );
+    }
     // Save the original URL, so that we do not import it again!
     $attachment_args['meta_input']['_foogallery_imported_from'] = $attachment_data['url'];
     // Insert the attachment.
@@ -2247,4 +2264,150 @@ function foogallery__(  $translation, $domain = 'foogallery'  ) {
         return __( $translation, $domain );
     }
     return $translation;
+}
+
+/**
+ * Formats the caption text for a gallery.
+ *
+ * @param string $text The caption text to format.
+ *
+ * @return string The formatted caption text.
+ */
+function foogallery_format_caption_text(  $text  ) {
+    global $current_foogallery;
+    if ( empty( $current_foogallery ) ) {
+        return $text;
+    }
+    //if text contains {{gallery-count}}
+    if ( strpos( $text, '{{gallery-count}}' ) !== false ) {
+        $text = str_replace( '{{gallery-count}}', $current_foogallery->attachment_count(), $text );
+    }
+    //if text contains {{gallery-title}}
+    if ( strpos( $text, '{{gallery-title}}' ) !== false ) {
+        $text = str_replace( '{{gallery-title}}', $current_foogallery->name, $text );
+    }
+    //if text contains {{gallery-description}}
+    if ( strpos( $text, '{{gallery-description}}' ) !== false ) {
+        $desc = $current_foogallery->_post->post_content;
+        $text = str_replace( '{{gallery-description}}', $desc, $text );
+    }
+    //if text contains {{attachment
+    if ( strpos( $text, '{{attachment' ) !== false ) {
+        $featured_attachment = $current_foogallery->featured_attachment();
+        if ( $featured_attachment ) {
+            //if text contains {{attachment-title}}
+            if ( strpos( $text, '{{attachment-title}}' ) !== false ) {
+                $text = str_replace( '{{attachment-title}}', $featured_attachment->title, $text );
+            }
+            //if text contains {{attachment-caption}}
+            if ( strpos( $text, '{{attachment-caption}}' ) !== false ) {
+                $text = str_replace( '{{attachment-caption}}', $featured_attachment->caption, $text );
+            }
+            //if text contains {{attachment-alt}}
+            if ( strpos( $text, '{{attachment-alt}}' ) !== false ) {
+                $text = str_replace( '{{attachment-alt}}', $featured_attachment->alt, $text );
+            }
+            //if text contains {{attachment-description}}
+            if ( strpos( $text, '{{attachment-description}}' ) !== false ) {
+                $text = str_replace( '{{attachment-description}}', $featured_attachment->description, $text );
+            }
+        }
+    }
+    return $text;
+}
+
+/**
+ * Safely convert a value to an int.
+ *
+ * @param $value
+ * @param int $default
+ *
+ * @return int
+ */
+function foogallery_intval(  $value, $default = 0  ) {
+    // Already a plain number
+    if ( is_numeric( $value ) ) {
+        return (int) $value;
+    }
+    // Backwards compat: extract int
+    if ( preg_match( '/\\d+$/', $value, $matches ) ) {
+        return (int) $matches[0];
+    }
+    return $default;
+}
+
+/**
+ * Returns true if we are currently showing a glalery preview.
+ */
+function foogallery_is_preview() {
+    return isset( $GLOBALS['foogallery_gallery_preview'] ) && $GLOBALS['foogallery_gallery_preview'];
+}
+
+/**
+ * Sort the retrieved attachment posts after the query has executed.
+ *
+ * @param FooGalleryAttachment[] $attachments Array of attachment objects.
+ * @param string $orderby Orderby clause used for the query.
+ * @param string $order Order clause used for the query.
+ *
+ * @return FooGalleryAttachment[] Sorted array of attachment objects.
+ */
+function foogallery_sort_attachments(  $attachments, $orderby, $order  ) {
+    if ( empty( $attachments ) ) {
+        return $attachments;
+    }
+    $order = ( strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC' );
+    switch ( $orderby ) {
+        case 'date':
+            usort( $attachments, function ( $a, $b ) use($order) {
+                $first_source = $a->date ?? '';
+                $second_source = $b->date ?? '';
+                $first = ( strtotime( $first_source ) ?: 0 );
+                $second = ( strtotime( $second_source ) ?: 0 );
+                $comparison = 0;
+                if ( $first < $second ) {
+                    $comparison = -1;
+                } elseif ( $first > $second ) {
+                    $comparison = 1;
+                }
+                return ( 'ASC' === $order ? $comparison : -$comparison );
+            } );
+            break;
+        case 'modified':
+            usort( $attachments, function ( $a, $b ) use($order) {
+                $first_source = $a->modified ?? '';
+                $second_source = $b->modified ?? '';
+                $first = ( strtotime( $first_source ) ?: 0 );
+                $second = ( strtotime( $second_source ) ?: 0 );
+                $comparison = 0;
+                if ( $first < $second ) {
+                    $comparison = -1;
+                } elseif ( $first > $second ) {
+                    $comparison = 1;
+                }
+                return ( 'ASC' === $order ? $comparison : -$comparison );
+            } );
+            break;
+        case 'title':
+            usort( $attachments, function ( $a, $b ) use($order) {
+                $comparison = strnatcasecmp( $a->title ?? '', $b->title ?? '' );
+                if ( 'ASC' === $order ) {
+                    return $comparison;
+                }
+                return -$comparison;
+            } );
+            break;
+        case 'rand':
+            shuffle( $attachments );
+            break;
+        default:
+            // For 'post__in' and any other unsupported orderby values we keep the original order.
+            break;
+    }
+    return apply_filters(
+        'foogallery_sort_attachments',
+        $attachments,
+        $orderby,
+        $order
+    );
 }

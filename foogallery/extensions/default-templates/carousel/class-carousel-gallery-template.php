@@ -28,6 +28,12 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			add_filter( 'foogallery_build_container_data_options-carousel', array( $this, 'add_data_options' ), 10, 3 );
 
 			add_action( 'foogallery_render_gallery_template_field_custom', array( $this, 'admin_custom_fields' ), 10, 3 );
+
+			// Adjust the default settings for this layout
+			add_filter( 'foogallery_override_gallery_template_fields_defaults-carousel', array( $this, 'field_defaults' ), 10, 1 );
+
+			// add a style block for the gallery
+			add_action( 'foogallery_template_style_block-carousel', array( $this, 'add_css' ), 10, 2 );
 			// @formatter:on
 		}
 
@@ -127,7 +133,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 		 * @return array
 		 */
 		function add_template( $gallery_templates ) {
-			$gallery_templates[] = array(
+			$gallery_templates[self::TEMPLATE_ID] = array(
 				'slug'                  => self::TEMPLATE_ID,
 				'name'                  => __( 'Carousel', 'foogallery' ),
 				'preview_support'       => true,
@@ -138,6 +144,19 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 				'thumbnail_dimensions'  => true,
 				'filtering_support'     => true,
 				'enqueue_core'          => true,
+				'icon'                  => '<svg viewBox="0 0 24 24">
+        <!-- images -->
+        <rect x="6" y="5" width="4" height="8"/>
+        <rect x="10" y="5" width="4" height="8"/>
+        <rect x="14" y="5" width="4" height="8"/>
+        <!-- arrows (solid triangles) -->
+        <polygon points="2,9 4,7 4,11" />
+        <polygon points="22,9 20,7 20,11" />
+        <!-- dots (more spaced out) -->
+        <circle cx="8" cy="17" r="0.8"/>
+        <circle cx="12" cy="17" r="0.8"/>
+        <circle cx="16" cy="17" r="0.8"/>
+      </svg>',
 				'fields'                => array(
 					array(
 						'id'       => 'thumbnail_dimensions',
@@ -152,6 +171,18 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						),
 						'row_data' => array(
 							'data-foogallery-change-selector' => 'input',
+							'data-foogallery-preview'         => 'shortcode'
+						)
+					),
+					array(
+						'id'       => 'gutter',
+						'title'    => __( 'Thumbnail Gap', 'foogallery' ),
+						'desc'     => __( 'The minimum gap or spacing to apply to thumbnails. Negative values create an overlap. ', 'foogallery' ),
+						'section'  => __( 'General', 'foogallery' ),
+						'default'  => array( 'min' => -40, 'max' => -20, 'units' => '%' ),
+						'type'     => 'carousel_gutter',
+						'row_data' => array(
+							'data-foogallery-change-selector' => ':input',
 							'data-foogallery-preview'         => 'shortcode'
 						)
 					),
@@ -187,25 +218,13 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						)
 					),
 					array(
-						'id'       => 'gutter',
-						'title'    => __( 'Gutters', 'foogallery' ),
-						'desc'     => __( 'The minimum gutter to apply to items. Negative values create an overlap. ', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
-						'default'  => array( 'min' => -40, 'max' => -20, 'units' => '%' ),
-						'type'     => 'carousel_gutter',
-						'row_data' => array(
-							'data-foogallery-change-selector' => ':input',
-							'data-foogallery-preview'         => 'shortcode'
-						)
-					),
-					array(
 						'id'       => 'centerOnClick',
 						'title'    => __( 'Side Items Click', 'foogallery' ),
 						'desc'     => __( 'What happens when an item in the carousel is clicked.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
 						'default'  => 'true',
 						'type'     => 'radio',
-						'spacer'   => '<span class="spacer"></span>',
+						'class'    => 'foogallery-radios-12em',
 						'choices' => array(
 							'true' => __( 'Center The Clicked Item', 'foogallery' ),
 							'false' => __( 'Open The Item In Lightbox', 'foogallery' ),
@@ -230,7 +249,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					),
 					array(
 						'id'       => 'autoplay_interaction',
-						'title'    => __( 'Autoplay', 'foogallery' ),
+						'title'    => __( 'Autoplay Mode', 'foogallery' ),
 						'desc'     => __( 'Specifies what occurs once/when a user has interacted with the carousel. Please Note: for touch devices autoplay is paused on "touchstart" and is only resumed once the user has not interacted with the carousel for the supplied time.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
 						'default'  => 'pause',
@@ -251,7 +270,6 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'section'  => __( 'General', 'foogallery' ),
 						'default'  => '',
 						'type'     => 'radio',
-						'spacer'   => '<span class="spacer"></span>',
 						'choices' => array(
 							'' => __( 'Same', 'foogallery' ),
 							'fg-inverted' => __( 'Inverted', 'foogallery' ),
@@ -267,7 +285,6 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
                         'section'  => __( 'General', 'foogallery' ),
                         'default'  => '',
                         'type'     => 'radio',
-                        'spacer'   => '<span class="spacer"></span>',
                         'choices' => array(
                             '' => __( 'Shown', 'foogallery' ),
                             'fg-carousel-hide-nav-arrows' => __( 'Hidden', 'foogallery' ),
@@ -279,11 +296,10 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
                     ),
                     array(
                         'id'       => 'show_pagination',
-                        'title'    => __( 'Show Pagination', 'foogallery' ),
+                        'title'    => __( 'Show Pagination Dots', 'foogallery' ),
                         'section'  => __( 'General', 'foogallery' ),
                         'default'  => '',
                         'type'     => 'radio',
-                        'spacer'   => '<span class="spacer"></span>',
                         'choices' => array(
                             '' => __( 'Shown', 'foogallery' ),
                             'fg-carousel-hide-pagination' => __( 'Hidden', 'foogallery' ),
@@ -296,10 +312,10 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
                     array(
                         'id'       => 'show_progress',
                         'title'    => __( 'Show Progress Bar', 'foogallery' ),
+						'desc'     => __( 'The progress bar is only shown when the carousel is in autoplay mode (set Autoplay Time to a value greater than 0).', 'foogallery' ),
                         'section'  => __( 'General', 'foogallery' ),
                         'default'  => '',
                         'type'     => 'radio',
-                        'spacer'   => '<span class="spacer"></span>',
                         'choices' => array(
                             '' => __( 'Shown', 'foogallery' ),
                             'fg-carousel-hide-progress-bar' => __( 'Hidden', 'foogallery' ),
@@ -378,6 +394,44 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			$args['link'] = foogallery_gallery_template_setting( 'thumbnail_link', 'image' );
 
 			return $args;
+		}
+
+		/**
+		 * Return an array of field defaults for the template
+		 *
+		 * @param $field_defaults
+		 *
+		 * @return string[]
+		 */
+		function field_defaults( $field_defaults ) {
+			return array_merge( $field_defaults, array(
+				'theme' => 'fg-light',
+				'hover_effect_caption_visibility' => '',
+				'caption_visibility_no_hover_effect' => '',
+				'border_size' => 'fg-border-medium',
+				'drop_shadow' => 'fg-shadow-medium',
+				'rounded_corners' => 'fg-round-small',
+				'inner_shadow' => '',
+				'hover_effect_icon' => 'fg-hover-circle-plus2',
+				'hover_effect_scale' => 'fg-hover-semi-zoomed'
+			) );
+		}
+
+		/**
+		 * Add css to the page for the gallery
+		 *
+		 * @param $gallery FooGallery
+		 */
+		function add_css( $css, $gallery ) {
+
+			$id         = $gallery->container_id();
+			$dimensions = foogallery_gallery_template_setting('thumbnail_dimensions');
+			if ( is_array( $dimensions ) && array_key_exists( 'width', $dimensions ) && intval( $dimensions['width'] ) > 0 ) {
+				$width = intval( $dimensions['width'] );
+				$css[] = '#' . $id . ' .fg-image { width: ' . $width . 'px; }';
+			}
+
+			return $css;
 		}
 	}
 }
