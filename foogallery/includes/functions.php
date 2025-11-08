@@ -88,7 +88,8 @@ function foogallery_permalink() {
  */
 function foogallery_get_setting(  $key, $default = false  ) {
     $foogallery = FooGallery_Plugin::get_instance();
-    return $foogallery->options()->get( $key, foogallery_get_default( $key, $default ) );
+    $value = $foogallery->options()->get( $key, foogallery_get_default( $key, $default ) );
+    return apply_filters( 'foogallery_get_setting-' . $key, $value, $default );
 }
 
 /**
@@ -451,6 +452,7 @@ function foogallery_build_class_attribute_safe(  $gallery  ) {
 function foogallery_build_class_attribute_render_safe(  $gallery  ) {
     $args = func_get_args();
     $result = call_user_func_array( "foogallery_build_class_attribute_safe", $args );
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $result is already escaped via esc_attr() in foogallery_build_class_attribute_safe()
     echo $result;
 }
 
@@ -810,14 +812,14 @@ function foogallery_output_thumbnail_generation_results() {
     try {
         $results = $thumbs->run_thumbnail_generation_tests();
         if ( $results['success'] ) {
-            echo '<span style="color:#0c0">' . __( 'Thumbnail generation test ran successfully.', 'foogallery' ) . '</span>';
+            echo '<span style="color:#0c0">' . esc_html__( 'Thumbnail generation test ran successfully.', 'foogallery' ) . '</span>';
         } else {
-            echo '<span style="color:#c00">' . __( 'Thumbnail generation test failed!', 'foogallery' ) . '</span>';
+            echo '<span style="color:#c00">' . esc_html__( 'Thumbnail generation test failed!', 'foogallery' ) . '</span>';
             var_dump( $results['error'] );
             var_dump( $results['file_info'] );
         }
     } catch ( Exception $e ) {
-        echo 'Exception: ' . $e->getMessage();
+        echo 'Exception: ' . esc_html( $e->getMessage() );
     }
 }
 
@@ -2401,7 +2403,32 @@ function foogallery_sort_attachments(  $attachments, $orderby, $order  ) {
             shuffle( $attachments );
             break;
         default:
-            // For 'post__in' and any other unsupported orderby values we keep the original order.
+            // For 'post__in' and any other unsupported orderby values we keep the original order when no sort override is set.
+            // Check if the attachments have a sort property, and use that to sort.
+            $sortable_attachments = array_filter( $attachments, static function ( $attachment ) {
+                return isset( $attachment->sort ) && '' !== $attachment->sort && null !== $attachment->sort;
+            } );
+            if ( !empty( $sortable_attachments ) ) {
+                usort( $attachments, function ( $a, $b ) use($order) {
+                    $first = $a->sort ?? '';
+                    $second = $b->sort ?? '';
+                    $first_numeric = is_numeric( $first );
+                    $second_numeric = is_numeric( $second );
+                    $comparison = 0;
+                    if ( $first_numeric || $second_numeric ) {
+                        $first = ( $first_numeric ? (float) $first : PHP_INT_MAX );
+                        $second = ( $second_numeric ? (float) $second : PHP_INT_MAX );
+                        if ( $first < $second ) {
+                            $comparison = -1;
+                        } elseif ( $first > $second ) {
+                            $comparison = 1;
+                        }
+                    } else {
+                        $comparison = strnatcasecmp( (string) $first, (string) $second );
+                    }
+                    return $comparison;
+                } );
+            }
             break;
     }
     return apply_filters(

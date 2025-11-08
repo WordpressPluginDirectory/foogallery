@@ -4,7 +4,7 @@ Donate link: https://fooplugins.com
 Tags: gallery, image-gallery, photo-gallery, responsive-gallery, lightbox
 Requires at least: 5.3
 Tested up to: 6.8
-Stable tag: 3.0.2
+Stable tag: 3.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -256,12 +256,38 @@ Yes. FooGallery does not collect visitor data, and admin tracking is optional.
 7. Frontend example with portfolio layout
 8. Frontend example with single thumbnail layout
 9. Frontend example with carousel layout
+10. Lightbox
 
 == Upgrade Notice ==
 
 Please update in order for FooGallery to work in WP 5.5+!
 
 == Changelog ==
+
+= 3.1.0 =
+
+This release includes a number of fixes/enhancements, but the biggest 2 are a bug fix for caption titles not showing in Firefox, and a new dropzone for uploading images to galleries.
+
+* Date Updated : 07 Nov 2025
+* New: Added dropzone to gallery edit page, so images can be uploaded by dropping them onto the page.
+* New: On the gallery listing page, the shortcode column changes to a small copy button on tablet size screens.
+* Fixed: Plugin Check requirements.
+* Fixed: Multiple PHP warnings.
+* Fixed: Fixed bug where caption titles were not showing in Firefox browser.
+
+= 3.0.6 =
+
+This is a small bug fix release, to address a bug with deeplinking not working in lightbox.
+
+* Date Updated : 31 Oct 2025
+
+= 3.0.5 =
+
+This update includes improvements to the post query datasource, which makes it more powerful.
+
+* Date Updated : 29 Oct 2025
+* New: Added new filter to override any setting 'foogallery_get_setting-{key}'
+* New: Added new filter to override attachments for a gallery 'foogallery_attachments'
 
 = 3.0.2 =
 

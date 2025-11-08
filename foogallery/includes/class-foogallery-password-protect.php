@@ -21,6 +21,10 @@ if ( ! class_exists( 'FooGallery_Password_Protect' ) ) {
 		public function customize_password_form_for_galleries( $output, $post, $invalid_password ) {
 			global $current_foogallery;
 
+			if ( empty( $current_foogallery ) ) {
+				return $output;
+			}
+
 			// Check if we're in gallery context
 			$gallery = foogallery::get( $post );
 			
@@ -40,7 +44,7 @@ if ( ! class_exists( 'FooGallery_Password_Protect' ) ) {
                 
                 // Replace the default text with gallery-specific text
 				$output = str_replace(
-					__( 'This content is password protected. To view it please enter your password below:' ),
+					__( 'This content is password protected. To view it please enter your password below:' ), // phpcs:ignore WordPress.WP.I18n.MissingArgDomain
 					__( 'This gallery is password protected. To view it please enter your password below:', 'foogallery' ),
 					$output
 				);
