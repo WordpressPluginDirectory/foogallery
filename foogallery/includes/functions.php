@@ -603,6 +603,8 @@ function foogallery_enqueue_style(
     $media = 'all'
 ) {
     $src = apply_filters( 'foogallery_enqueue_style_src', $src, $handle );
+    //resolve the asset URL to a fingerprinted version if available.
+    $src = foogallery_resolve_asset_url( $src );
     wp_enqueue_style(
         $handle,
         $src,
@@ -1858,6 +1860,9 @@ function foogallery_is_activation_page() {
  * @param array $array an array of data to render.
  */
 function foogallery_render_debug_array(  $array, $level = 0  ) {
+    if ( !is_array( $array ) ) {
+        return;
+    }
     foreach ( $array as $key => $value ) {
         if ( !empty( $value ) ) {
             if ( $level > 0 ) {
@@ -1890,7 +1895,18 @@ function foogallery_import_attachment(  $attachment_data  ) {
     if ( is_wp_error( $response ) ) {
         return $response;
     }
+    $response_code = (int) wp_remote_retrieve_response_code( $response );
+    if ( 200 !== $response_code ) {
+        return new WP_Error('foogallery_import_attachment_http_error', sprintf( __( 'Remote server returned HTTP %d.', 'foogallery' ), $response_code ));
+    }
+    $content_type = (string) wp_remote_retrieve_header( $response, 'content-type' );
+    if ( '' !== $content_type && 0 !== stripos( $content_type, 'image/' ) ) {
+        return new WP_Error('foogallery_import_attachment_invalid_content_type', sprintf( __( 'Remote URL did not return an image (content-type: %s).', 'foogallery' ), $content_type ));
+    }
     $contents = wp_remote_retrieve_body( $response );
+    if ( '' === $contents ) {
+        return new WP_Error('foogallery_import_attachment_empty_body', __( 'Remote server returned an empty response body.', 'foogallery' ));
+    }
     // Upload and get file data.
     $upload = wp_upload_bits( basename( $attachment_data['url'] ), null, $contents );
     if ( array_key_exists( 'error', $upload ) && false !== $upload['error'] ) {
@@ -2102,12 +2118,6 @@ function foogallery_local_url_to_path(  $url  ) {
 function foogallery_sanitize_code(  $text  ) {
     if ( !empty( $text ) ) {
         $text = wp_check_invalid_utf8( $text, true );
-        $text = htmlentities(
-            $text,
-            ENT_NOQUOTES,
-            'UTF-8',
-            false
-        );
         return apply_filters( 'foogallery_sanitize_code', $text );
     }
     return false;
@@ -2437,4 +2447,89 @@ function foogallery_sort_attachments(  $attachments, $orderby, $order  ) {
         $orderby,
         $order
     );
+}
+
+/**
+ * Returns the lightbox name for the plugin, that is whitelable safe.
+ *
+ * @return string
+ */
+function foogallery_lightbox_name() {
+    return sprintf( __( '%s Lightbox', 'foogallery' ), foogallery_plugin_name() );
+}
+
+/**
+ * Resolve a relative asset path OR a full plugin URL into a fingerprinted URL.
+ * External URLs (non-plugin) are returned unchanged.
+ *
+ * @param string $path Relative path OR full URL.
+ * @return string Fully-resolved URL (fingerprinted if applicable, otherwise original).
+ */
+function foogallery_resolve_asset_url(  $path  ) {
+    static $manifest = null;
+    // Load manifest only once
+    if ( $manifest === null ) {
+        $manifest_file = FOOGALLERY_PATH . 'includes/asset-manifest.php';
+        $manifest = ( file_exists( $manifest_file ) ? include $manifest_file : [] );
+    }
+    $plugin_url = rtrim( FOOGALLERY_URL, '/' );
+    // First, check if $path is a full URL
+    if ( preg_match( '#^https?://#i', $path ) ) {
+        // If NOT a local asset, then get out early.
+        if ( strpos( $path, $plugin_url ) !== 0 ) {
+            return $path;
+        }
+        // Normalize plugin full URL to a relative path.
+        $relative_path = ltrim( substr( $path, strlen( $plugin_url ) ), '/' );
+    } else {
+        $relative_path = $path;
+    }
+    // Try to resolve through manifest.
+    $resolved = ( isset( $manifest[$relative_path] ) ? $manifest[$relative_path] : null );
+    // If we do not resolve to anything then return the original AS IS.
+    if ( $resolved === null ) {
+        return $path;
+    }
+    // Finally, reconstruct full URL.
+    return trailingslashit( $plugin_url ) . ltrim( $resolved, '/' );
+}
+
+/**
+ * Returns true if the current request is a REST API request.
+ *
+ * @return bool
+ */
+function foogallery_is_rest_request() {
+    // Must be a real REST API request
+    if ( !(defined( 'REST_REQUEST' ) && REST_REQUEST) ) {
+        return false;
+    }
+    // Must be targeting a REST route (sanity check)
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( strpos( $uri, '/' . rest_get_url_prefix() . '/' ) === false ) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Returns true if the current request is a REST API request from the admin.
+ *
+ * @return bool
+ */
+function foogallery_is_rest_request_from_admin() {
+    if ( !foogallery_is_rest_request() ) {
+        return false;
+    }
+    // Must have an admin referer
+    $ref = $_SERVER['HTTP_REFERER'] ?? '';
+    if ( empty( $ref ) ) {
+        return false;
+    }
+    // Check referer starts with /wp-admin/
+    if ( strpos( $ref, admin_url() ) === 0 ) {
+        // Finally, ensures the user is logged in.
+        return is_user_logged_in();
+    }
+    return false;
 }

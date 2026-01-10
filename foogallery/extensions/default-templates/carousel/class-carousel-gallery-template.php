@@ -34,7 +34,65 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 
 			// add a style block for the gallery
 			add_action( 'foogallery_template_style_block-carousel', array( $this, 'add_css' ), 10, 2 );
+
+			// add il8n for the template
+			add_filter( 'foogallery_il8n', array( $this, 'add_il8n' ) );
 			// @formatter:on
+		}
+
+		/**
+		 * Add il8n for the template
+		 *
+		 * @param $il8n
+		 *
+		 * @return array
+		 */
+		function add_il8n( $il8n ) {
+			$prev_entry = foogallery_get_language_array_value( 'language_carousel_previous_text', __( 'Previous', 'foogallery' ) );
+			if ( $prev_entry !== false ) {
+				$il8n = array_merge_recursive( $il8n, array(
+					'template' => array(
+						"carousel" => array(
+							'prev' => esc_html( $prev_entry )
+						)
+					)
+				) );
+			}
+
+			$next_entry = foogallery_get_language_array_value( 'language_carousel_next_text', __( 'Next', 'foogallery' ) );
+			if ( $next_entry !== false ) {
+				$il8n = array_merge_recursive( $il8n, array(
+					'template' => array(
+						"carousel" => array(
+							'next' => esc_html( $next_entry )
+						)
+					)
+				) );
+			}
+
+			$bullet_entry = foogallery_get_language_array_value( 'language_carousel_bullet_text', __( 'Item {ITEM}', 'foogallery' ) );
+			if ( $bullet_entry !== false ) {
+				$il8n = array_merge_recursive( $il8n, array(
+					'template' => array(
+						"carousel" => array(
+							'bullet' => esc_html( $bullet_entry )
+						)
+					)
+				) );
+			}
+
+			$bullet_active_entry = foogallery_get_language_array_value( 'language_carousel_bullet_active_text', __( 'Item {ITEM} - Current', 'foogallery' ) );
+			if ( $bullet_active_entry !== false ) {
+				$il8n = array_merge_recursive( $il8n, array(
+					'template' => array(
+						"carousel" => array(
+							'bulletActive' => esc_html( $bullet_active_entry )
+						)
+					)
+				) );
+			}
+
+			return $il8n;
 		}
 
 		/**
@@ -77,7 +135,6 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 				<?php
 				echo '&nbsp;&nbsp;<a data-min="-40" data-max="-20" data-units="%" class="foogallery-field-carousel-gutter-preset" href="#" >' . esc_html__( 'Preset 1', 'foogallery' ) . '</a>';
 				echo '&nbsp;&nbsp;<a data-min="5" data-max="10" data-units="px" class="foogallery-field-carousel-gutter-preset" href="#" >' . esc_html__( 'Preset 2', 'foogallery' ) . '</a>';
-				
 			}
 		}
 

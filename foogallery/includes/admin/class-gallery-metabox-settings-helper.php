@@ -161,12 +161,26 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 					if ( isset( $field['row_data'] ) ) {
 						$field_row_data = array_map( 'esc_attr', $field['row_data'] );
 						foreach ( $field_row_data as $field_row_data_name => $field_row_data_value ) {
-							$field_row_data_html .= " $field_row_data_name=" . '"' . $field_row_data_value . '"';
+							$field_row_data_html .= " $field_row_data_name=" . '"' . esc_attr( $field_row_data_value ) . '"';
 						}
 					}
 					?>
-					<tr class="<?php echo $field_class; ?>"<?php echo $field_row_data_html; ?>>
-						<?php if ( 'help' === $field_type ) { ?>
+					<tr data-foogallery-setting-id="<?php echo esc_attr( $field['id'] ); ?>" data-foogallery-setting-type="<?php echo esc_attr( $field_type ); ?>" class="<?php echo esc_attr( $field_class ); ?>"<?php echo $field_row_data_html; ?>>
+						<?php 
+                        if ( 'warning' === $field_type ) { ?>
+							<td colspan="2">
+								<div class="foogallery-help foogallery-warning">
+									<i class="dashicons dashicons-warning"></i>
+									<?php if ( array_key_exists( 'title', $field ) ) { ?>
+									<?php echo '<h4>' . $field['title'] . '</h4>'; ?>
+									<?php } ?>
+									<?php if ( array_key_exists( 'desc', $field ) ) { ?>
+									<p><?php echo $field['desc']; ?></p>
+									<?php } ?>
+								</div>
+							</td>
+						<?php }                        
+                        else if ( 'help' === $field_type ) { ?>
 							<td colspan="2">
 								<div class="foogallery-help">
 									<i class="dashicons dashicons-editor-help"></i>

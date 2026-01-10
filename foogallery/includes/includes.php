@@ -39,10 +39,14 @@ require_once FOOGALLERY_PATH . 'includes/class-thumbnail-dimensions.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-common-fields.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-lazyload.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-paging.php';
+require_once FOOGALLERY_PATH . 'includes/class-foogallery-license-constant-handler.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-attachment-custom-class.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-extensions-compatibility.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-crop-position.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-force-https.php';
+
+//Handle preview scenarios.
+require_once FOOGALLERY_PATH . 'includes/class-previews.php';
 
 // Datasource includes.
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-datasource-media_library.php';

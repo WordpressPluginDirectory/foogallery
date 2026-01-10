@@ -32,8 +32,43 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
             add_action( 'foogallery_loaded_template_after', array( $this, 'output_paging_script_block' ), 90, 1 );
 
             add_filter( 'foogallery_attachment_html_item_classes', array( $this, 'hide_item_for_html_output' ), 10, 3 );
+
+            add_filter( 'foogallery_attachment_get_posts_args', array( $this, 'add_paging_query_args' ), 10, 3 );
         }
 
+        /**
+         * Add paging query args to the attachment query
+         *
+         * @param $args
+         *
+         * @return mixed
+         */
+        function add_paging_query_args( $args ) {
+            global $current_foogallery_arguments;
+            global $current_foogallery;
+
+            if ( isset( $current_foogallery_arguments['page'] ) ) {
+                $args['page'] = $args['paged'] = intval( $current_foogallery_arguments['page'] );
+            }
+
+            if ( isset( $current_foogallery_arguments['posts_per_page'] ) ) {
+                $args['posts_per_page'] = intval( $current_foogallery_arguments['posts_per_page'] );
+            }
+
+            $posts_per_page = isset( $args['posts_per_page'] ) ? intval( $args['posts_per_page'] ) : 0;
+
+            //check if no posts per page is set
+            if ( isset( $current_foogallery_arguments['page'] ) && $posts_per_page <= 0 ) {
+                $this->determine_paging( $current_foogallery );
+                if ( foogallery_current_gallery_has_cached_value('paging' ) ) {
+                    $paging_options = foogallery_current_gallery_get_cached_value( 'paging' );
+                    $page_size = intval( $paging_options['size'] );
+                    $args['posts_per_page'] = $page_size;
+                }
+            }
+
+            return $args;
+        }
 
 		function hide_item_for_html_output( $classes, $foogallery_attachment, $args ) {
 			if ( isset( $foogallery_attachment->class ) ) {
@@ -170,6 +205,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'data-foogallery-change-selector' => 'input',
 						'data-foogallery-preview'         => 'shortcode',
 						'data-foogallery-value-selector'  => 'input:checked',
+						'data-foogallery-persist'         => true
 					)
 				);
 
@@ -184,12 +220,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'step'    => '1',
 					'min'     => '0',
 					'row_data'=> array(
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode',
+						'data-foogallery-change-selector' 		   => 'input',
+						'data-foogallery-preview'				   => 'shortcode',
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field'          => 'paging_type',
 						'data-foogallery-show-when-field-operator' => 'regex',
 						'data-foogallery-show-when-field-value'    => 'dots|pagination|infinite|loadMore',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -207,12 +244,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'both'   => __( 'Both', 'foogallery' )
 					) ),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
+						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field-operator' => 'regex',
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'dots|pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'dots|pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -230,12 +268,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'fg-custom' => __( 'Custom', 'foogallery' ),
 					) ),
 					'row_data'=> array(
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field'          => 'paging_type',
 						'data-foogallery-show-when-field-operator' => 'regex',
 						'data-foogallery-show-when-field-value'    => 'dots|pagination|loadMore',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -251,12 +290,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'false'  => __( 'No', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
+						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field-operator' => 'regex',
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'dots|pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'dots|pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -271,11 +311,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'step'    => '1',
 					'min'     => '0',
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -291,11 +333,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'false'  => __( 'Hide', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -311,11 +355,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'false'  => __( 'Hide', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -331,11 +377,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'false'  => __( 'Hide', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -351,13 +399,14 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'html'   => __( 'Legacy (HTML)', 'foogallery' )
 					),
 					'row_data'=> array(
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode',
-						'data-foogallery-value-selector' => 'input:checked',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-value-selector'           => 'input:checked',
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field'          => 'paging_type',
 						'data-foogallery-show-when-field-operator' => '!==',
 						'data-foogallery-show-when-field-value'    => '',
+						'data-foogallery-persist'                  => true
 					)
 				);
 			}

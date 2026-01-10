@@ -606,7 +606,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'type'    => 'radio',
 				'default' => 'yes',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_info_choices', array(
-					'yes' => __( 'Overlaid', 'foogallery' ),
+					'yes' => __( 'Overlay', 'foogallery' ),
 					'no'  => __( 'Inline', 'foogallery' ),
 				) ),
 				'row_data'=> array(
@@ -865,7 +865,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_buttons_display', array(
-					'yes' => __( 'Overlaid', 'foogallery' ),
+					'yes' => __( 'Overlay', 'foogallery' ),
 					'no'  => __( 'Inline', 'foogallery' ),
 				) ),
 				'row_data'=> array(
@@ -1072,7 +1072,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 		 * @return mixed
 		 */
 		function add_lightbox($lightboxes) {
-			$lightboxes['foogallery'] = __( 'FooGallery Lightbox', 'foogallery' );
+            $lightboxes['foogallery'] = foogallery_lightbox_name();
 			return $lightboxes;
 		}
 
