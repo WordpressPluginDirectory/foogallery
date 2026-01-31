@@ -4,7 +4,7 @@ Donate link: https://fooplugins.com
 Tags: gallery, image-gallery, photo-gallery, responsive-gallery, lightbox
 Requires at least: 5.3
 Tested up to: 6.9
-Stable tag: 3.1.6
+Stable tag: 3.1.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -186,6 +186,12 @@ In order for FooGallery to function properly, the theme needs to have:
 
 One way to check if the theme is the problem, is by switching to one of the built-in WordPress themes, and then see if the gallery loads.
 
+= I am getting a 503 server error whenever I try to edit galleries from the admin =
+
+Some versions of PHP have issues with the Imagick Image library, which FooGallery uses to generate thumbnails.
+To fix this problem, goto FooGallery Settings -> Images, and ensure "Force GD Library" is checked and save settings.
+This will force your server to rather use the GD image library to avoid the 503 errors.
+
 = After updating, my galleries no longer work! What should I do? =
 
 Do you have any WordPress caching or optimization plugins? If so, then clear/purge your caches.
@@ -283,6 +289,41 @@ Yes. FooGallery does not collect visitor data, and admin tracking is optional.
 Please update in order for FooGallery to work in WP 5.5+!
 
 == Changelog ==
+
+= 3.1.11 =
+
+This release fixes a bug where FooGallery assets were not loading in the block editor when in "iframe" mode.
+
+* Date Updated : 30 Jan 2026
+* Fixed : Fixed bug where FooGallery assets were not being loaded in iframe mode.
+* Fixed : Fixed bug where FooGallery blocks were not selectable in the block editor.
+* Fixed : Fixed bug where masonry galleries were not calculating correct layout in iframe mode.
+
+= 3.1.10 =
+
+This release fixes a bunch of issues, hardens AJAX calls, and ensures foogallery block is WP 7.0 compatible.
+
+* Date Updated : 28 Jan 2026
+* Update : Thumbnail generation tests are only done on the gallery listing page now.
+* Fixed : Reworked thumbnail generation tests to not do HTTP checks for images in the media library, and only load 5 attaachments. These prevent any possible 503 errors happening.
+* Update : Added capability checks for admin ajax events to ensure user can perform the needed activites.
+* Update : Updated foogallery block to use apiVersion 3, to future proof for iframe block editor coming in WordPress 7.0.
+* Fix : Fixed CSS styling issues for foogallery block gallery selector.
+* Update : Hardened all admin ajax endpoints with capability checks and extra checks.
+* Update : Included Social Addon promotion tab when editing a gallery.
+* Update : Removed all old FooVideo compatibility code.
+
+= 3.1.9 =
+
+This release fixes a bug where the media modal was not showing in the classic editor and ACF.
+
+* Date Updated : 15 Jan 2026
+
+= 3.1.7 =
+
+This release fixes the bug for the missing "Import Video" tab in the media selector modal.
+
+* Date Updated : 11 Jan 2026
 
 = 3.1.6 =
 
